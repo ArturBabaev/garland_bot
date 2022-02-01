@@ -1,6 +1,9 @@
 from telebot import types, TeleBot
 from repository.user_repository import UserRepository
 from model.user import User
+from service.quantity_insulators import quantity_insulators
+from docxtpl import DocxTemplate
+from math import ceil
 
 
 class StartController:
@@ -103,13 +106,17 @@ class StartController:
         try:
             user = self.user_repository.get_user(message.chat.id)
             user.leakage_path_length = int(message.text)
+
+            if user.leakage_path_length < 0:
+                raise ValueError
+
             self.user_repository.set_user(user)
 
             self.choose_insulator_utilization_factors(message)
 
         except ValueError:
-            self.bot.send_message(message.chat.id, 'Введите целое число в мм, пожалуйста!')
-            self.choose_leakage_path_length(message)
+            self.bot.send_message(message.chat.id, 'Введите целое положительное число в мм, пожалуйста!')
+            return self.choose_leakage_path_length(message)
 
     def choose_insulator_utilization_factors(self, message: types.Message) -> None:
         text_1_9_45 = 'ПУЭ-7 п.1.9.45. Коэффициенты использования kи подвесных тарельчатых изоляторов по ГОСТ 27661 ' \
@@ -143,44 +150,53 @@ class StartController:
         keyboard = types.InlineKeyboardMarkup(row_width=1)
 
         configuration_1 = types.InlineKeyboardButton(text='Двукрылая', callback_data='diptera')
-        configuration_2 = types.InlineKeyboardButton(text='С увеличенным вылетом ребра на нижней поверхности',
+        configuration_2 = types.InlineKeyboardButton(text='С увеличенным вылетом ребра на ниж. поверх.',
                                                      callback_data='extended_rib')
-        configuration_3 = types.InlineKeyboardButton(text='Аэродинамического профиля (конусная, полусферическая)',
+        configuration_3 = types.InlineKeyboardButton(text='Аэродинам. профиля (конусная, полусферическая)',
                                                      callback_data='conical')
-        configuration_4 = types.InlineKeyboardButton(text='Колоколообразная с гладкой внутренней и ребристой '
-                                                          'наружной поверхностями', callback_data='bell_shaped')
+        configuration_4 = types.InlineKeyboardButton(text='Колоколообразная с глад. внут. и ребр. наруж. пов.',
+                                                     callback_data='bell_shaped')
 
         keyboard.add(configuration_1, configuration_2, configuration_3, configuration_4)
 
         self.bot.send_message(message.chat.id, text=text, reply_markup=keyboard)
-
-        self.choose_garland_utilization_factors(message)
 
     def choose_insulators_diameter(self, message: types.Message) -> None:
         try:
             user = self.user_repository.get_user(message.chat.id)
             user.insulator_plate_diameter = int(message.text)
 
+            if int(message.text) < 0:
+                raise ValueError
+
             koeff = round((user.leakage_path_length / user.insulator_plate_diameter), 2)
 
-            if 0.9 < koeff <= 1.05:
-                user.insulator_utilization_factors = 1
-            elif 1.05 < koeff <= 1.1:
-                user.insulator_utilization_factors = 1.05
-            elif 1.1 < koeff <= 1.2:
-                user.insulator_utilization_factors = 1.1
-            elif 1.2 < koeff <= 1.3:
-                user.insulator_utilization_factors = 1.15
-            elif 1.3 < koeff <= 1.4:
-                user.insulator_utilization_factors = 1.2
+            if 0.9 <= koeff <= 1.4:
+                if 0.9 <= koeff <= 1.05:
+                    user.insulator_utilization_factors = 1
+                elif 1.05 < koeff <= 1.1:
+                    user.insulator_utilization_factors = 1.05
+                elif 1.1 < koeff <= 1.2:
+                    user.insulator_utilization_factors = 1.1
+                elif 1.2 < koeff <= 1.3:
+                    user.insulator_utilization_factors = 1.15
+                elif 1.3 < koeff <= 1.4:
+                    user.insulator_utilization_factors = 1.2
+            else:
+                self.bot.send_message(message.chat.id, 'табл. 1.9.20 ПУЭ-7 регламентрирует значения Lи/D от 0,9 '
+                                                       'до 1,4 включительно. Проверьте корректность вводимых данных!')
+                self.bot.send_message(message.chat.id, 'Повторите ввод значений длины пути утечки изолятора и '
+                                                       'диаметра тарелки изолятора в мм.')
+
+                return self.choose_leakage_path_length(message)
 
             self.user_repository.set_user(user)
 
             self.choose_garland_utilization_factors(message)
 
         except ValueError:
-            self.bot.send_message(message.chat.id, 'Введите целое число в мм, пожалуйста!')
-            self.utilization_factors_1_9_45_callback(message)
+            self.bot.send_message(message.chat.id, 'Введите целое положительное число в мм, пожалуйста!')
+            return self.utilization_factors_1_9_45_callback(message)
 
     def choose_garland_utilization_factors(self, message: types.Message) -> None:
         text_1_9_49 = 'ПУЭ-7 п.1.9.49. Коэффициенты использования kк одноцепных гирлянд и одиночных опорных колонок, ' \
@@ -197,3 +213,109 @@ class StartController:
                       'а также подстанционных аппаратов с растяжками), следует принимать равными 1,1.'
 
         text = 'Выберите пункт ПУЭ-7 в соответсвии с которым необходимо определить коэффициент kк.'
+
+        keyboard = types.InlineKeyboardMarkup()
+
+        key_1_9_49 = types.InlineKeyboardButton(text='п.1.9.49', callback_data='1.9.49')
+        key_1_9_50 = types.InlineKeyboardButton(text='п.1.9.50', callback_data='1.9.50')
+        key_1_9_51 = types.InlineKeyboardButton(text='п.1.9.51', callback_data='1.9.51')
+        key_1_9_52 = types.InlineKeyboardButton(text='п.1.9.52', callback_data='1.9.52')
+
+        keyboard.add(key_1_9_49, key_1_9_50, key_1_9_51, key_1_9_52)
+
+        self.bot.send_message(message.chat.id, text=text_1_9_49)
+        self.bot.send_message(message.chat.id, text=text_1_9_50)
+        self.bot.send_message(message.chat.id, text=text_1_9_51)
+        self.bot.send_message(message.chat.id, text=text_1_9_52)
+
+        self.bot.send_message(message.chat.id, text=text, reply_markup=keyboard)
+
+    def utilization_factors_1_9_50_callback(self, message: types.Message) -> None:
+        text = 'Вы выбрали п.1.9.50. Выберите количество паралельных ветвей гирлянды изоляторов.'
+
+        keyboard = types.InlineKeyboardMarkup(row_width=1)
+
+        key_1 = types.InlineKeyboardButton(text='1', callback_data='1.9.50_1')
+        key_2 = types.InlineKeyboardButton(text='2', callback_data='1.9.50_2')
+        key_3 = types.InlineKeyboardButton(text='3-5', callback_data='1.9.50_3')
+
+        keyboard.add(key_1, key_2, key_3)
+
+        self.bot.send_message(message.chat.id, text=text, reply_markup=keyboard)
+
+    def utilization_factors_1_9_49_callback(self, call: types.CallbackQuery) -> None:
+        text = 'Вы выбрали п.{}.'.format(call.data)
+
+        self.bot.send_message(call.message.chat.id, text=text)
+
+        self.choose_result(call.message)
+
+    def choose_result(self, message: types.Message) -> None:
+        user = self.user_repository.get_user(message.chat.id)
+
+        text = 'Произвожу расчет количества изоляторов в гирлянде...'
+
+        self.bot.send_message(message.chat.id, text=text)
+
+        lambda_e = user.lambda_e
+        U = user.voltage_gost
+        L_i = user.leakage_path_length
+        k_i = user.insulator_utilization_factors
+        k_k = user.garland_utilization_factors
+
+        intermediate_result = quantity_insulators(lambda_e, U, L_i, k_i, k_k)
+        final_result = ceil(intermediate_result)
+
+        user.intermediate_result = intermediate_result
+        user.final_result = final_result
+        self.user_repository.set_user(user)
+
+        text_quantity = 'Принимаем количество подвесных тарельчатых изоляторов, m = {} шт.'.format(final_result)
+
+        self.bot.send_message(message.chat.id, text=text_quantity)
+
+        self.choose_result_word(message)
+
+    def choose_result_word(self, message: types.Message) -> None:
+        text = 'Хотели бы Вы получить файл word с оформленным расчетом?'
+
+        keyboard = types.InlineKeyboardMarkup(row_width=1)
+
+        key_1 = types.InlineKeyboardButton(text='Да', callback_data='Yes')
+        key_2 = types.InlineKeyboardButton(text='Нет', callback_data='No')
+
+        keyboard.add(key_1, key_2)
+
+        self.bot.send_message(message.chat.id, text=text, reply_markup=keyboard)
+
+    def result_word_callback(self, message: types.Message) -> None:
+        user = self.user_repository.get_user(message.chat.id)
+
+        lambda_e = user.lambda_e
+        U = user.voltage_gost
+        L_i = user.leakage_path_length
+        k_i = user.insulator_utilization_factors
+        k_k = user.garland_utilization_factors
+        k = round((k_i * k_k), 2)
+        L_out = round(((lambda_e * 10 * U * k) / 1000), 2)
+        intermediate_result = user.intermediate_result
+        final_result = user.final_result
+
+        doc = DocxTemplate("my_template.docx")
+
+        context = {'lambda': lambda_e, 'voltage': U, 'creep_dist': L_i, 'koeff_i': k_i, 'koeff_k': k_k, 'koeff': k,
+                   'length_crdi': L_out, 'amt1': intermediate_result, 'amt': final_result}
+
+        doc.render(context)
+
+        doc.save("generated.docx")
+
+        with open('generated.docx', 'rb') as doc:
+            self.bot.send_document(message.chat.id, doc)
+
+        self.result_callback(message)
+
+    def result_callback(self, message: types.Message) -> None:
+        text = 'Для того, чтобы продолжить работу нажмите /start.'
+
+        self.bot.send_message(message.chat.id, text=text)

@@ -24,7 +24,9 @@ class DBHelper:
                            'leakage_path_length INTEGER,' \
                            'insulator_plate_diameter INTEGER,' \
                            'insulator_utilization_factors REAL,' \
-                           'garland_utilization_factors REAL)'
+                           'garland_utilization_factors REAL,' \
+                           'intermediate_result REAL,' \
+                           'final_result INTEGER)'
 
         self.conn.execute(user_table_query)
         self.conn.commit()

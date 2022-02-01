@@ -9,3 +9,5 @@ class User:
         self.insulator_plate_diameter = None
         self.insulator_utilization_factors = None
         self.garland_utilization_factors = None
+        self.intermediate_result = None
+        self.final_result = None

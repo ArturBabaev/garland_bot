@@ -20,11 +20,13 @@ class UserRepository:
                             'leakage_path_length,' \
                             'insulator_plate_diameter,' \
                             'insulator_utilization_factors,' \
-                            'garland_utilization_factors) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+                            'garland_utilization_factors,' \
+                            'intermediate_result,' \
+                            'final_result) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
 
         args = (user.user_id, user.voltage, user.voltage_gost, user.degree_of_pollution, user.lambda_e,
                 user.leakage_path_length, user.insulator_plate_diameter, user.insulator_utilization_factors,
-                user.garland_utilization_factors)
+                user.garland_utilization_factors, user.intermediate_result, user.final_result)
 
         self.conn.execute(insert_user_query, args)
         self.conn.commit()
@@ -38,7 +40,9 @@ class UserRepository:
                        'leakage_path_length,' \
                        'insulator_plate_diameter,' \
                        'insulator_utilization_factors,' \
-                       'garland_utilization_factors FROM users WHERE users.user_id = (?)'
+                       'garland_utilization_factors,' \
+                       'intermediate_result,' \
+                       'final_result FROM users WHERE users.user_id = (?)'
 
         args = (user_id,)
         fetch = self.conn.execute(select_query, args).fetchone()
@@ -52,5 +56,7 @@ class UserRepository:
         user.insulator_plate_diameter = fetch[6]
         user.insulator_utilization_factors = fetch[7]
         user.garland_utilization_factors = fetch[8]
+        user.intermediate_result = fetch[9]
+        user.final_result = fetch[10]
 
         return user

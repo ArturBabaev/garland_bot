@@ -54,15 +54,49 @@ def callback_worker(call):
     elif call.data == 'diptera':
         user.insulator_utilization_factors = 1.2
         user_repository.set_user(user)
+        start_controller.choose_garland_utilization_factors(call.message)
     elif call.data == 'extended_rib':
         user.insulator_utilization_factors = 1.25
         user_repository.set_user(user)
+        start_controller.choose_garland_utilization_factors(call.message)
     elif call.data == 'conical':
         user.insulator_utilization_factors = 1
         user_repository.set_user(user)
+        start_controller.choose_garland_utilization_factors(call.message)
     elif call.data == 'bell_shaped':
         user.insulator_utilization_factors = 1.15
         user_repository.set_user(user)
+        start_controller.choose_garland_utilization_factors(call.message)
+    elif call.data == '1.9.49':
+        user.garland_utilization_factors = 1
+        user_repository.set_user(user)
+        start_controller.utilization_factors_1_9_49_callback(call)
+    elif call.data == '1.9.50':
+        start_controller.utilization_factors_1_9_50_callback(call.message)
+    elif call.data == '1.9.51':
+        user.garland_utilization_factors = 1
+        user_repository.set_user(user)
+        start_controller.utilization_factors_1_9_49_callback(call)
+    elif call.data == '1.9.52':
+        user.garland_utilization_factors = 1.1
+        user_repository.set_user(user)
+        start_controller.utilization_factors_1_9_49_callback(call)
+    elif call.data == '1.9.50_1':
+        user.garland_utilization_factors = 1
+        user_repository.set_user(user)
+        start_controller.choose_result(call.message)
+    elif call.data == '1.9.50_2':
+        user.garland_utilization_factors = 1.05
+        user_repository.set_user(user)
+        start_controller.choose_result(call.message)
+    elif call.data == '1.9.50_3':
+        user.garland_utilization_factors = 1.1
+        user_repository.set_user(user)
+        start_controller.choose_result(call.message)
+    elif call.data == 'Yes':
+        start_controller.result_word_callback(call.message)
+    elif call.data == 'No':
+        start_controller.result_callback(call.message)
 
 
 bot.polling(none_stop=True, interval=0)

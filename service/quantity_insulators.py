@@ -1,6 +1,4 @@
-import math
-
-def quantity_insulators(lambda_e: float, U: int, L_i: int, k_i: float, k_k: float) -> int:
+def quantity_insulators(lambda_e: float, U: int, L_i: int, k_i: float, k_k: float) -> float:
     """
     Функция для поиска количества изоляторов в гирлянде изоляторов
 
@@ -12,12 +10,8 @@ def quantity_insulators(lambda_e: float, U: int, L_i: int, k_i: float, k_k: floa
     :return: (шт.) Количество подвесных тарельчатых изоляторов
     """
 
-    k = k_i * k_k
+    k = round((k_i * k_k), 2)
     L = lambda_e * 10 * U * k
-    m = math.ceil(L / L_i)
+    m = round((L / L_i), 2)
 
     return m
-
-
-
-# print(quantity_insulators(2, 363, 545, 1.25, 1.05))
