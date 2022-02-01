@@ -107,7 +107,7 @@ class StartController:
             user = self.user_repository.get_user(message.chat.id)
             user.leakage_path_length = int(message.text)
 
-            if user.leakage_path_length < 0:
+            if 5000 < user.leakage_path_length <= 0:
                 raise ValueError
 
             self.user_repository.set_user(user)
@@ -166,7 +166,7 @@ class StartController:
             user = self.user_repository.get_user(message.chat.id)
             user.insulator_plate_diameter = int(message.text)
 
-            if int(message.text) < 0:
+            if 5000 < user.insulator_plate_diameter <= 0:
                 raise ValueError
 
             koeff = round((user.leakage_path_length / user.insulator_plate_diameter), 2)
