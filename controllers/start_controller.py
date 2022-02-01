@@ -308,9 +308,9 @@ class StartController:
 
         doc.render(context)
 
-        doc.save("generated.docx")
+        doc.save('generated_{}.docx'.format(message.chat.id))
 
-        with open('generated.docx', 'rb') as doc:
+        with open('generated_{}.docx'.format(message.chat.id), 'rb') as doc:
             self.bot.send_document(message.chat.id, doc)
 
         self.result_callback(message)
