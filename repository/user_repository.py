@@ -5,6 +5,7 @@ from repository.db_helper import DBHelper
 class UserRepository:
     def __init__(self) -> None:
         self.conn = DBHelper().get_connector()
+        self.cur = DBHelper().get_cursor()
 
     def __new__(cls):
         if not hasattr(cls, 'instance'):
@@ -28,7 +29,7 @@ class UserRepository:
                 user.leakage_path_length, user.insulator_plate_diameter, user.insulator_utilization_factors,
                 user.garland_utilization_factors, user.intermediate_result, user.final_result)
 
-        self.conn.execute(insert_user_query, args)
+        self.cur.execute(insert_user_query, args)
         self.conn.commit()
 
     def get_user(self, user_id: int) -> User:
@@ -45,7 +46,7 @@ class UserRepository:
                        'final_result FROM users WHERE users.user_id = (?)'
 
         args = (user_id,)
-        fetch = self.conn.execute(select_query, args).fetchone()
+        fetch = self.cur.execute(select_query, args).fetchone()
 
         user = User(fetch[0])
         user.voltage = fetch[1]
