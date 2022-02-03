@@ -1,12 +1,16 @@
 import sqlite3
-from sqlite3 import Connection
+from sqlite3 import Connection, Cursor
 
 
 class DBHelper:
     conn = sqlite3.connect('sqlite.db', check_same_thread=False)
+    cur = conn.cursor()
 
     def get_connector(self) -> Connection:
         return self.conn
+
+    def get_cursor(self) -> Cursor:
+        return self.cur
 
     def __new__(cls):
         if not hasattr(cls, 'instance'):
@@ -28,5 +32,5 @@ class DBHelper:
                            'intermediate_result REAL,' \
                            'final_result INTEGER)'
 
-        self.conn.execute(user_table_query)
+        self.cur.execute(user_table_query)
         self.conn.commit()
