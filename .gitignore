@@ -17,3 +17,5 @@ wheels/
 *.egg
 MANIFEST
 .env
+.log
+.docx
