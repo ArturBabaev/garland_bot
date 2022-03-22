@@ -260,7 +260,7 @@ class StartController:
 
         text = 'Произвожу расчет количества изоляторов в гирлянде...'
 
-        self.bot.send_message(message.chat.id, text=text)
+        msg = self.bot.send_message(message.chat.id, text=text)
 
         lambda_e = user.lambda_e
         U = user.voltage_gost
@@ -277,7 +277,7 @@ class StartController:
 
         text_quantity = 'Принимаем количество подвесных тарельчатых изоляторов, m = {} шт.'.format(final_result)
 
-        self.bot.send_message(message.chat.id, text=text_quantity)
+        self.bot.edit_message_text(text=text_quantity, chat_id=message.chat.id, message_id=msg.message_id)
 
         self.choose_result_word(message)
 
