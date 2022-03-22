@@ -4,6 +4,7 @@ from model.user import User
 from service.quantity_insulators import quantity_insulators
 from docxtpl import DocxTemplate
 from math import ceil
+from loguru import logger
 
 
 class StartController:
@@ -107,14 +108,16 @@ class StartController:
             user = self.user_repository.get_user(message.chat.id)
             user.leakage_path_length = int(message.text)
 
-            if 5000 < user.leakage_path_length <= 0:
-                raise ValueError
+            if 5000 < user.leakage_path_length or user.leakage_path_length <= 0:
+                raise ValueError('invalid data')
 
             self.user_repository.set_user(user)
 
             self.choose_insulator_utilization_factors(message)
 
-        except ValueError:
+        except ValueError as error:
+            logger.info('{}', error)
+            logger.add('logs.log', rotation="500 MB")
             self.bot.send_message(message.chat.id, 'Введите целое положительное число в мм, пожалуйста!')
             return self.choose_leakage_path_length(message)
 
@@ -166,8 +169,8 @@ class StartController:
             user = self.user_repository.get_user(message.chat.id)
             user.insulator_plate_diameter = int(message.text)
 
-            if 5000 < user.insulator_plate_diameter <= 0:
-                raise ValueError
+            if 5000 < user.insulator_plate_diameter or user.insulator_plate_diameter <= 0:
+                raise ValueError('invalid data')
 
             koeff = round((user.leakage_path_length / user.insulator_plate_diameter), 2)
 
@@ -194,7 +197,9 @@ class StartController:
 
             self.choose_garland_utilization_factors(message)
 
-        except ValueError:
+        except ValueError as error:
+            logger.info('{}', error)
+            logger.add('logs.log', rotation="500 MB")
             self.bot.send_message(message.chat.id, 'Введите целое положительное число в мм, пожалуйста!')
             return self.utilization_factors_1_9_45_callback(message)
 
